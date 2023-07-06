@@ -1,0 +1,162 @@
+
+
+.filter-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+
+.login-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 100%;
+
+  /* Centering */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+.box-login {
+  display: flex;
+  align-items: center;
+
+}
+
+.info-container {
+  border: 1px solid #becaf7;
+  border-radius: 5px;
+  padding-top: 6px;
+  padding-left: 6px;
+  display: flex;
+  align-items: center;
+  padding: auto;
+}
+
+.rbc-header.sunday {
+  color: red;
+}
+
+.rbc-day-slot.sunday,
+.rbc-allday-cell.sunday {
+  background-color: #fee2e2;
+  cursor: not-allowed;
+}
+
+
+
+.login-container h3 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-container .form-group {
+  margin-bottom: 20px;
+}
+
+.login-container .btn-block {
+  margin-top: 20px;
+}
+
+.login-container .form-control {
+  width: 100%;
+}
+
+.header {
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.header-title {
+  margin: 0;
+}
+
+.profile-icon {
+  border-radius: 50%;
+  display: flex;
+  align-items: right;
+  justify-content: space-between;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+
+.rbc-time-header-content {
+  position: sticky;
+  left: 0;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.calendar-container {
+  height: 100vh;
+}
+
+.rbc-calendar {
+  height: 100%;
+}
+
+@media (max-width: 576px) {
+  .rbc-time-view .rbc-row,
+  .rbc-day-slot .rbc-time-slot {
+    height: 60px;
+  }
+}
+
+/* Sidebar.css */
+.sidebar .nav-link {
+  color: black;
+  border-bottom: 1px solid #ccc;
+  padding: 10px;
+}
+
+.sidebar .nav-link.active {
+  color: blue;
+  border-bottom: 2px solid blue;
+};
+
+.row-justify-content-end {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+
+.custom-sunday {
+  background-color: pink;
+}
+.ibik-timetable-title {
+  font-size: 20px;
+  font-weight: 500;
+  float: left;
+}
+.admin-login-button {
+  float: right;
+  background-color: '#5272E9';
+  border-radius: '15px';
+}
+
+.custom-button {
+  background-color: #5272E9;
+  border-radius: 15px;
+  font-size: 15px;
+  float: right;
+}
+
+.cancel-button {
+  background-color: #D3D4D5;
+  border-radius: 15px;
+  font-weight:500;
+  font-size: 15px;
+  float: right;
+}

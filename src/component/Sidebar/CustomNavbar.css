@@ -1,0 +1,24 @@
+
+.navbar .nav-link {
+  font-size: small;
+  margin-right: 10px; }
+
+.navbar .nav-link.active {
+  border-bottom: 2px solid blue;
+}
+
+.navbar .nav-link:hover:not(.active) {
+  border-bottom: 2px solid lightgray;
+}
+
+.navbar a {
+  text-decoration: none;
+}
+
+.navbar .nav-link.active a {
+  color: blue;
+}
+
+.navbar .nav-link.active a:hover {
+  color: darkblue;
+}

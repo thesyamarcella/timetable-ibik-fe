@@ -1,0 +1,35 @@
+.sidebar {
+ /* Lebar sidebar */
+  height: 100%; /* Tinggi sidebar */
+  background-color: #f2f2f2; /* Warna latar belakang sidebar */
+  font-size: small;
+}
+
+.sidebar-item { 
+  margin-bottom: 10px;
+  color: #ABABAB;
+}
+
+.sidebar-item a {
+  display: block; /* Membuat link menjadi elemen block untuk memenuhi lebar sidebar */
+  padding: 5px 10px; /* Padding pada link */
+  text-decoration: none; /* Menghapus dekorasi underline pada link */
+  color: #ABABAB; /* Warna teks pada link */
+  border-radius: 5px;
+  
+}
+
+.sidebar-item a:hover {
+  background-color: #e6e6e6;
+  border-radius: 5px;
+}
+
+.sidebar-item.active {
+  border: 1px solid #becaf7;
+  border-radius: 5px;
+}
+
+.sidebar-item.active a {
+  color: #007bff; /* Warna teks biru pada link yang aktif */
+  font-weight: bold; /* Tebal pada teks link yang aktif */
+}
