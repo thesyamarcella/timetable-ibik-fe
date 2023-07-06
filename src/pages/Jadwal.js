@@ -41,12 +41,14 @@ const Jadwal = () => {
   const [eventTitle, setEventTitle] = useState('');
   const [lecturer, setLecturer] = useState('');
   const [room, setRoom] = useState('');
+  const [semester, setSemester] = useState('');
   const [studyProgram, setStudyProgram] = useState('');
   const [classtype, setClassType] = useState('');
   const [isHoliday, setIsHoliday] = useState(false);
   const [selectedTime, setSelectedTime] = useState('');
   const [lecturers, setLecturers] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [semesters, setSemesters] = useState([]);
   const [studyPrograms, setStudyPrograms] = useState([]);
   const [classTypes, setClassTypes] = useState([]);
 
@@ -56,6 +58,7 @@ const Jadwal = () => {
   const [selectedStudyPrograms, setSelectedStudyPrograms] = useState([]);
   const [selectedClassType, setSelectedClassType] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState([]);
+  const [selectedSemester, setSelectedSemester] = useState([]);
   const [selectedLecturer, setSelectedLecturer] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -78,6 +81,10 @@ const Jadwal = () => {
   
   const handleRoomChange = (selected) => {
     setSelectedRoom(selected);
+  };
+
+  const handleSemesterChange = (selected) => {
+    setSelectedSemester(selected);
   };
   
   const handleLecturerChange = (selected) => {
@@ -106,26 +113,17 @@ const Jadwal = () => {
 
       if (eventTitle) {
         const newEvent = {
-          eventTitle: eventTitle,
+          title: eventTitle,
           start: selectedEvent.start,
           end: selectedEvent.end,
           isHoliday: isHoliday,
-          LecturerId:{id:lecturer},
-          RoomId: {id:room},
-          StudyProgramId: {id:studyProgram},
-          ClassTypeId: {id:studyProgram},
+          lecturerId:parseInt(lecturer),
+          roomId: parseInt(room),
+          semesterId: parseInt(semester),
+          studyProgramId: parseInt(studyProgram),
+          classTypeId: parseInt(classtype),
         };
 
-        // const newEvent = {
-        //   eventTitle: eventTitle,
-        //   start: selectedEvent.start,
-        //   end: selectedEvent.end,
-        //   LecturerId: lecturer,
-        //   RoomId: room,
-        //   StudyProgramId: studyProgram,
-        //   ClassTypeId: classtype,
-        //   isHoliday: isHoliday,
-        // };
         setCalendarEvents((prevEvents) => [...prevEvents, newEvent]);
         axios 
         .post('http://localhost:3000/api/schedules', newEvent)
@@ -143,7 +141,7 @@ const Jadwal = () => {
         handleCloseFormModal();
       }
     },
-    [eventTitle, selectedEvent, lecturer, room, studyProgram, classtype, handleCloseFormModal]
+    [eventTitle, selectedEvent, lecturer, room,semester, studyProgram, classtype, handleCloseFormModal]
   );
 
   const handleSelectSlot = useCallback(
@@ -204,6 +202,7 @@ const Jadwal = () => {
     setEventTitle('');
     setLecturer('');
     setRoom('');
+    setSemester('');
     setStudyProgram('');
     setClassType('');
     setIsHoliday(false);
@@ -228,6 +227,11 @@ const Jadwal = () => {
       .get('http://localhost:3000/api/rooms') 
       .then((response) => setRooms(response.data))
       .catch((error) => console.error('Error fetching rooms:', error));
+
+      axios
+      .get('http://localhost:3000/api/semesters') 
+      .then((response) => setSemesters(response.data))
+      .catch((error) => console.error('Error fetching semesters:', error));
   
     axios
       .get('http://localhost:3000/api/studyprograms') 
@@ -238,6 +242,12 @@ const Jadwal = () => {
       .get('http://localhost:3000/api/classtypes') 
       .then((response) => setClassTypes(response.data))
       .catch((error) => console.error('Error fetching class types:', error));
+
+    axios
+      .get('http://localhost:3000/api/schedules') 
+      .then((response) => console.log(response.data))
+      .catch((error) => console.error('Error fetching class types:', error));
+    
   }, []);
   
 
@@ -258,6 +268,7 @@ const Jadwal = () => {
             <option value='studyPrograms'>Program Studi</option>
             <option value='classType'>Kelas</option>
             <option value='room'>Ruangan</option>
+            <option value='semester'>Semester</option>
             <option value='lecturer'>Dosen</option>
           </Form.Select>
           {selectedFilter === 'studyPrograms' && (
@@ -311,6 +322,25 @@ const Jadwal = () => {
               inputProps={{ style: { width: '100%' } }}
             />
           )}
+
+          {selectedFilter === 'semester' && (
+            <Typeahead
+              options={semesters.map(semester => semester.name)}
+              selected={selectedSemester}
+              onChange={handleSemesterChange}
+              placeholder='Pilih Ruangan'
+              renderMenuItemChildren={(option, { text }) => (
+                <div>
+                  {text}
+                  <div>
+                    <small>{option}</small>
+                  </div>
+                </div>
+              )}
+              inputProps={{ style: { width: '100%' } }}
+            />
+          )}
+
           {selectedFilter === 'lecturer' && (
             <div>
               <Typeahead
@@ -380,11 +410,11 @@ const Jadwal = () => {
                 </Col>
               </Form.Group>
               <Form.Group as={Row} controlId="formEventTitle">
-          <Form.Label column sm="3"> Subject </Form.Label>
+          <Form.Label column sm="3"> Mata Kuliah </Form.Label>
           <Col sm="9">
             <Form.Control
               type="text"
-              placeholder="Enter the Subject name"
+              placeholder="masukkan Nama Mata Kuliah"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               required
@@ -400,7 +430,7 @@ const Jadwal = () => {
             value={lecturer}
             onChange={(e) => setLecturer(e.target.value)}
           >
-            <option value="">Pilih Lecturer</option>
+            <option value="">Pilih Dosen</option>
             {lecturers.map((lecturer) => (
               <option key={lecturer.id} value={lecturer.id}>
                 {lecturer.name}
@@ -419,10 +449,29 @@ const Jadwal = () => {
             value={room}
             onChange={(e) => setRoom(e.target.value)}
           >
-            <option value="">Pilih Room</option>
+            <option value="">Pilih Ruangan</option>
             {rooms.map((room) => (
               <option key={room.id} value={room.id}>
                 {room.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      <Form.Group as={Row} controlId="formSemester">
+        <Form.Label column sm="3">
+          Semester
+        </Form.Label>
+        <Col sm="9">
+          <Form.Select
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+          >
+            <option value="">Pilih Semester</option>
+            {semesters.map((semester) => (
+              <option key={semester.id} value={semester.id}>
+                {semester.name}
               </option>
             ))}
           </Form.Select>
@@ -457,7 +506,7 @@ const Jadwal = () => {
             value={classtype}
             onChange={(e) => setClassType(e.target.value)}
           >
-            <option value="">Pilih Class</option>
+            <option value="">Pilih Kelas</option>
             {classTypes.map((classType) => (
               <option key={classType.id} value={classType.id}>
                 {classType.name}
@@ -469,12 +518,12 @@ const Jadwal = () => {
 
         <Form.Group as={Row} controlId="formIsHoliday">
           <Form.Label column sm="3">
-            schedule off
+            Libur
           </Form.Label>
           <Col sm="9" className='mt-2'>
             <Form.Check
               type="checkbox"
-              label="schedule off"
+              label="Kelas diliburkan?"
               checked={isHoliday}
               onChange={(e) => setIsHoliday(e.target.checked)}
             />
@@ -484,10 +533,10 @@ const Jadwal = () => {
 
             <div className="text-end">
               <Button variant="light" className="me-2 " style={{ borderRadius: '15px' }} onClick={handleCloseFormModal}>
-                Cancel
+                Batal
               </Button>
               <Button variant="primary" type="submit" className='custom-button'>
-                Save Schedule
+                Simpan Jadwal
               </Button>
             </div>
           </Form>

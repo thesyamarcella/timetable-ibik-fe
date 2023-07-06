@@ -60,6 +60,8 @@ const MainPage = () => {
       .catch(error => {
         console.error('Error:', error);
       });
+
+      
   }, []);
 
   const handleStudyProgramsChange = selected => {
