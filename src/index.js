@@ -14,6 +14,7 @@ import MasterDataSemesterPage from './pages/MasterDataSemesterPage';
 import MasterDataKelasPage from './pages/MasterDataKelasPage';
 import MainPage from './pages/MainPage';
 import PrivateRoute from './PrivateRoute';
+import Schedule from './pages/schedule/schedule';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -28,6 +29,7 @@ root.render(
       <Route path="/Prodi" element ={<MasterDataProdiPage />} />
       <Route path="/Semester" element ={<MasterDataSemesterPage />} />
       <Route path="/Kelas" element ={<MasterDataKelasPage/>} />
+      <Route path="/Schedule" element ={<Schedule/>} />
     </Routes>
   </BrowserRouter>
   </React.StrictMode>

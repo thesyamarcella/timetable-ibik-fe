@@ -27,7 +27,6 @@ const CustomDayHeader = ({ label }) => {
     backgroundColor: isSunday ? '#F4F4F4' : 'white', // Set gray background for Sunday, white for other days
   };
 
-
   return (
     <div className={`rbc-header ${isSunday ? 'sunday' : ''}`} style={dayHeaderStyle}>
       {moment(label).format('ddd')}
@@ -107,16 +106,26 @@ const Jadwal = () => {
 
       if (eventTitle) {
         const newEvent = {
-          id: generateUniqueId(),
-          title: eventTitle,
+          eventTitle: eventTitle,
           start: selectedEvent.start,
           end: selectedEvent.end,
-          lecturerId: lecturers,
-          roomId: rooms,
-          studyProgramId: studyPrograms,
-          classtypeId: classTypes,
           isHoliday: isHoliday,
+          LecturerId:{id:lecturer},
+          RoomId: {id:room},
+          StudyProgramId: {id:studyProgram},
+          ClassTypeId: {id:studyProgram},
         };
+
+        // const newEvent = {
+        //   eventTitle: eventTitle,
+        //   start: selectedEvent.start,
+        //   end: selectedEvent.end,
+        //   LecturerId: lecturer,
+        //   RoomId: room,
+        //   StudyProgramId: studyProgram,
+        //   ClassTypeId: classtype,
+        //   isHoliday: isHoliday,
+        // };
         setCalendarEvents((prevEvents) => [...prevEvents, newEvent]);
         axios 
         .post('http://localhost:3000/api/schedules', newEvent)
@@ -200,10 +209,6 @@ const Jadwal = () => {
     setIsHoliday(false);
   };
 
-  const generateUniqueId = () => {
-    return Math.random().toString(36).substring(2) + Date.now().toString(36);
-  };
-
   const isSunday = (date) => {
     return moment(date).day() === 0;
   };
@@ -250,17 +255,17 @@ const Jadwal = () => {
             <div className='filter-container'>
           <Form.Select value={selectedFilter} onChange={handleFilterChange}>
             <option value=''>Pilih Filter</option>
-            <option value='studyPrograms'>Study program</option>
-            <option value='classType'>Class</option>
-            <option value='room'>Room</option>
-            <option value='lecturer'>Lecturer</option>
+            <option value='studyPrograms'>Program Studi</option>
+            <option value='classType'>Kelas</option>
+            <option value='room'>Ruangan</option>
+            <option value='lecturer'>Dosen</option>
           </Form.Select>
           {selectedFilter === 'studyPrograms' && (
             <Typeahead
               options={studyPrograms.map(studyProgram => studyProgram.name)}
               selected={selectedStudyPrograms}
               onChange={handleStudyProgramsChange}
-              placeholder='Pilih Study program'
+              placeholder='Pilih Program Studi'
               renderMenuItemChildren={(option, { text }) => (
                 <div>
                   {text}
@@ -277,7 +282,7 @@ const Jadwal = () => {
               options={classTypes.map(classType => classType.name)}
               selected={selectedClassType}
               onChange={handleClassTypeChange}
-              placeholder='Pilih Class'
+              placeholder='Pilih Tipe Kelas'
               renderMenuItemChildren={(option, { text }) => (
                 <div>
                   {text}
@@ -294,7 +299,7 @@ const Jadwal = () => {
               options={rooms.map(room => room.name)}
               selected={selectedRoom}
               onChange={handleRoomChange}
-              placeholder='Pilih Room'
+              placeholder='Pilih Ruangan'
               renderMenuItemChildren={(option, { text }) => (
                 <div>
                   {text}
