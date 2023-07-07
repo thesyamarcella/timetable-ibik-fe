@@ -5,7 +5,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { nanoid } from "nanoid";
-import { Container, Row, Col } from "reactstrap";
+import { Container, Row, Col, Button } from "reactstrap";
 import Select from "react-select";
 import DateRangePicker from "react-bootstrap-daterangepicker";
 import "./custom.css";
@@ -36,9 +36,20 @@ export default function Jadwal() {
   const [semesters, setSemesters] = useState([]);
   const [studyPrograms, setStudyPrograms] = useState([]);
   const [classTypes, setClassTypes] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  
+  const [clickedEvent, setClickedEvent] = useState(null);
 
+
+  const isFullscreen = window.innerWidth > 768; // Menggunakan breakpoint 768px sebagai pemisah layar penuh dan layar kecil
+
+  const dayHeaderContent = (args) => {
+    const weekdayFormat = isFullscreen ? "long" : "short";
+    return (
+      <div style={{ ttextDecoration: "none", color: "black", pointerEvents: "none" }}>
+        {args.date.toLocaleString("default", { weekday: weekdayFormat })}
+      </div>
+    );
+  };
+  
 
 useEffect(() => {
   axios
@@ -68,25 +79,14 @@ useEffect(() => {
 }, []);
 
 
-function resetForm() {
-  setTitle("");
-  setStart(new Date("2023-10-01"));
-  setEnd(new Date("2023-10-07"));
-  setIsHoliday(false);
-  setLecturer("");
-  setRoom("");
-  setSemester("");
-  setStudyProgram("");
-  setClasstype("");
-}
 
 
 
-  const handleCloseModal = () => {
-    resetForm();
-    handleClose();
-    setModal(false);
-  };
+const handleCloseModal = () => {
+  handleClose();
+  setModal(false);
+};
+
 
   function handleDateClick(arg) {
     // bind with an arrow function
@@ -106,18 +106,7 @@ function resetForm() {
     }
   }
 
-  function handleSearch() {
-    // Mendapatkan semua jadwal dari state atau sumber data lainnya
-    const allEvents = [...events]; // Mengganti `events` dengan data jadwal yang ada
-  
-    // Melakukan filter berdasarkan nilai searchQuery
-    const filteredEvents = allEvents.filter((event) =>
-      event.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  
-    // Memperbarui state currentEvents dengan jadwal yang sudah difilter
-    setCurrentEvents(filteredEvents);
-  }
+
   
   
 
@@ -149,12 +138,22 @@ function resetForm() {
   
 
   function handleEventClick(clickInfo) {
+    const event = clickInfo.event;
+  
     setState({ clickInfo, state: "update" });
-    setTitle(clickInfo.event.title);
-    setStart(clickInfo.event.start);
-    setEnd(clickInfo.event.end);
+    setClickedEvent(event);
+    setTitle(event.title);
+    setStart(event.start);
+    setEnd(event.end);
+    setIsHoliday(event.extendedProps.isHoliday);
+    setLecturer(event.extendedProps.lecturer);
+    setRoom(event.extendedProps.room);
+    setSemester(event.extendedProps.semester);
+    setStudyProgram(event.extendedProps.studyProgram);
+    setClasstype(event.extendedProps.classType);
     setModal(true);
   }
+  
 
   useEffect(() => {
     handleEvents();
@@ -186,14 +185,47 @@ function resetForm() {
   }
 
   function handleEventDrop(checkInfo) {
-    setState({ checkInfo, state: "drop" });
-    setConfirmModal(true);
+    const { event } = checkInfo;
+    const newStart = checkInfo.event.start;
+    const newEnd = checkInfo.event.end;
+  
+    axios
+      .put(`http://localhost:3000/api/schedules/${event.id}`, {
+        ...event.extendedProps, // Menyertakan data acara lama kecuali start dan end
+        start: newStart.toISOString(),
+        end: newEnd.toISOString(),
+      })
+      .then((response) => {
+        console.log("Event updated:", response.data);
+        // ...
+      })
+      .catch((error) => {
+        console.error("Error updating event:", error);
+        // ...
+      });
   }
-
+  
   function handleEventResize(checkInfo) {
-    setState({ checkInfo, state: "resize" });
-    setConfirmModal(true);
+    const { event } = checkInfo;
+    const newStart = checkInfo.event.start;
+    const newEnd = checkInfo.event.end;
+  
+    axios
+      .put(`http://localhost:3000/api/schedules/${event.id}`, {
+        ...event.extendedProps, // Menyertakan data acara lama kecuali start dan end
+        start: newStart.toISOString(),
+        end: newEnd.toISOString(),
+      })
+      .then((response) => {
+        console.log("Event updated:", response.data);
+        // ...
+      })
+      .catch((error) => {
+        console.error("Error updating event:", error);
+        // ...
+      });
   }
+  
 
   function handleEdit() {
     if (!state.clickInfo || !state.clickInfo.event || !start || !end) {
@@ -326,12 +358,21 @@ function handleDelete() {
     <div className="page-content">
       <div className="container-fluid">
         <h5>Manajemen Jadwal</h5>
+        <Button
+              style={{ float: "right" }}
+              color="secondary"
+              onClick={() => setModal(true)}
+            >
+              Add schedule
+            </Button>
         <div className="info-container">
         <p>  klik pada kolom untuk menambahkan jadwal baru, geser kotak jadwal untuk memindahkan waktu.</p>
       </div>
       <div>
       <Container>
         <FullCalendar
+         height="auto"
+          contentHeight="auto"
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
@@ -341,9 +382,7 @@ function handleDelete() {
           dayMaxEvents={true}
           hiddenDays={[0]}
           weekends={weekendsVisible}
-          dayHeaderContent={(args) =>
-            args.date.toLocaleString("default", { weekday: "long" })
-          }
+          dayHeaderContent={dayHeaderContent}
           initialDate="2023-10-01"
           validRange={{
             start: "2023-10-01",
@@ -367,7 +406,8 @@ function handleDelete() {
           dateClick={handleDateClick}
           slotMinTime="07:30:00"
           slotMaxTime="22:00:00"
-          slotDuration="00:15:00"
+          className="full-width-calendar"
+          // slotDuration="00:15:00"
         />
       </Container>
 
@@ -495,6 +535,19 @@ function handleDelete() {
             </Input>
           </Col>
         </FormGroup>
+        {/* <FormGroup row>
+        <Label for="isHoliday" sm={3}>
+          Is Holiday
+        </Label>
+        <Col sm={9}>
+          <Input
+            type="checkbox"
+            name="isHoliday"
+            checked={isHoliday}
+            onChange={(e) => setIsHoliday(e.target.checked)}
+          />
+        </Col>
+      </FormGroup> */}
         </CustomModal>
 
       <CustomModal

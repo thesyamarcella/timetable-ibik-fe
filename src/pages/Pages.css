@@ -86,32 +86,9 @@
 }
 
 .container {
-  max-width: 800px;
-  margin: 0 auto;
+margin-top: 1rem;
 }
 
-
-.rbc-time-header-content {
-  position: sticky;
-  left: 0;
-  background-color: #fff;
-  z-index: 1;
-}
-
-.calendar-container {
-  height: 100vh;
-}
-
-.rbc-calendar {
-  height: 100%;
-}
-
-@media (max-width: 576px) {
-  .rbc-time-view .rbc-row,
-  .rbc-day-slot .rbc-time-slot {
-    height: 60px;
-  }
-}
 
 /* Sidebar.css */
 .sidebar .nav-link {
@@ -132,14 +109,6 @@
 }
 
 
-.custom-sunday {
-  background-color: pink;
-}
-.ibik-timetable-title {
-  font-size: 20px;
-  font-weight: 500;
-  float: left;
-}
 .admin-login-button {
   float: right;
   background-color: '#5272E9';
