@@ -106,10 +106,6 @@ const handleCloseModal = () => {
     }
   }
 
-
-  
-  
-
   function renderEventContent(eventInfo) {
     const options = { hour: "2-digit", minute: "2-digit", hour12: false };
     const eventStart = eventInfo.event.start.toLocaleTimeString([], options);
@@ -134,9 +130,6 @@ const handleCloseModal = () => {
     );
   }
   
-  
-  
-
   function handleEventClick(clickInfo) {
     const event = clickInfo.event;
   

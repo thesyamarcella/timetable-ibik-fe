@@ -1,260 +1,194 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import moment from 'moment';
-import { Row, Col, Button, Form } from 'react-bootstrap';
-import { Typeahead } from 'react-bootstrap-typeahead';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import timeGridPlugin from "@fullcalendar/timegrid";
 
-const localizer = momentLocalizer(moment);
-
-const MainPage = () => {
-  const [selectedStudyPrograms, setSelectedStudyPrograms] = useState([]);
-  const [selectedClassType, setSelectedClassType] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState([]);
-  const [selectedLecturer, setSelectedLecturer] = useState([]);
-
-  const [lecturers, setLecturers] = useState([]);
+export default function Jadwal() {
+  const [weekendsVisible, setWeekendsVisible] = useState(true);
+  const [currentEvents, setCurrentEvents] = useState([]);
   const [classTypes, setClassTypes] = useState([]);
+  const [lecturers, setLecturers] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [studyprograms, setStudyPrograms] = useState([]);
+  const [filterClass, setFilterClass] = useState("");
+  const [filterLecturer, setFilterLecturer] = useState("");
+  const [filterRoom, setFilterRoom] = useState("");
 
   useEffect(() => {
-    // Fetch lecturers
     axios
-      .get('http://localhost:3000/api/lecturers')
-      .then(response => {
-        setLecturers(response.data);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+      .get("http://localhost:3000/api/classtypes")
+      .then((response) => setClassTypes(response.data))
+      .catch((error) => console.error("Error fetching class types:", error));
 
-    // Fetch class types
     axios
-      .get('http://localhost:3000/api/classtypes')
-      .then(response => {
-        setClassTypes(response.data);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+      .get("http://localhost:3000/api/lecturers")
+      .then((response) => setLecturers(response.data))
+      .catch((error) => console.error("Error fetching lecturers:", error));
 
-    // Fetch study programs
     axios
-      .get('http://localhost:3000/api/studyprograms')
-      .then(response => {
-        setStudyPrograms(response.data);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
-
-    // Fetch rooms
-    axios
-      .get('http://localhost:3000/api/rooms')
-      .then(response => {
-        setRooms(response.data);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
-
-      
+      .get("http://localhost:3000/api/rooms")
+      .then((response) => setRooms(response.data))
+      .catch((error) => console.error("Error fetching rooms:", error));
   }, []);
 
-  const handleStudyProgramsChange = selected => {
-    setSelectedStudyPrograms(selected);
-  };
+  useEffect(() => {
+    fetchEvents();
+  }, [filterClass, filterLecturer, filterRoom]);
 
-  const handleClassTypeChange = selected => {
-    setSelectedClassType(selected);
-  };
+  function fetchEvents() {
+    axios
+      .get("http://localhost:3000/api/schedules")
+      .then((response) => {
+        const events = response.data.map((schedule) => ({
+          id: schedule.id,
+          title: schedule.title,
+          start: new Date(schedule.start),
+          end: new Date(schedule.end),
+          isHoliday: schedule.isHoliday,
+          extendedProps: {
+            lecturer: schedule.lecturerId,
+            room: schedule.roomId,
+            semester: schedule.Semester ? schedule.Semester.name : "",
+            classType: schedule.classTypeId,
+            studyProgram: schedule.StudyProgram ? schedule.StudyProgram.name : "",
+          },
+        }));
 
-  const handleRoomChange = selected => {
-    setSelectedRoom(selected);
-  };
+        const filteredEvents = events.filter((event) => {
+          if (filterClass && event.extendedProps.classType !== parseInt(filterClass)) {
+            return false;
+          }
 
-  const handleLecturerChange = selected => {
-    setSelectedLecturer(selected);
-  };
+          if (filterLecturer && event.extendedProps.lecturer !== parseInt(filterLecturer)) {
+            return false;
+          }
 
-  const events = [
-    {
-      eventTitle: 'Event 1',
-      start: new Date(2023, 5, 19, 8),
-      end: new Date(2023, 5, 19, 10),
-      studyprograms: 'StudyPrograms A',
-      classtype: 'ClassType 1',
-      room: 'Room 1',
-    },
-    // Add more events here...
-  ];
+          if (filterRoom && event.extendedProps.room !== parseInt(filterRoom)) {
+            return false;
+          }
 
-  const filteredEvents = events.filter(
-    event =>
-      (!selectedStudyPrograms.length ||
-        selectedStudyPrograms.includes(event.studyprograms)) &&
-      (!selectedClassType.length ||
-        selectedClassType.includes(event.classtype)) &&
-      (!selectedRoom.length || selectedRoom.includes(event.room)) &&
-      (!selectedLecturer.length || selectedLecturer.includes(event.lecturer))
-  );
+          return true;
+        });
 
-  const [selectedFilter, setSelectedFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+        setCurrentEvents(filteredEvents);
+      })
+      .catch((error) => {
+        console.error("Error fetching events:", error);
+      });
+  }
 
-  const handleFilterChange = event => {
-    setSelectedFilter(event.target.value);
-    setSearchQuery('');
-  };
+  const isFullscreen = window.innerWidth > 768; // Menggunakan breakpoint 768px sebagai pemisah layar penuh dan layar kecil
 
-  // const handleSearchQueryChange = event => {
-  //   setSearchQuery(event.target.value);
-  // };
-
-  const searchOptions = (options, query) => {
-    return options.filter(option =>
-      option.toLowerCase().includes(query.toLowerCase())
-    );
-  };
-
-  const CustomToolbar = () => {
+  const dayHeaderContent = (args) => {
+    const weekdayFormat = isFullscreen ? "long" : "short";
     return (
-      <div className='mt-3'>
-        <div className='header mb-5'>
-          <div className='ibik-timetable-title'>IBIKtimetable</div>
-          <div className='admin-login-button'>
-            <Link to='/AdminLogin'>
-              <Button variant='primary' className='custom-button'>Admin Login</Button>
-            </Link>
-          </div>
-        </div>
-        
-        <div className='filter-container mb-4'>
-          <Form.Select value={selectedFilter} onChange={handleFilterChange}>
-            <option value=''>Pilih Filter</option>
-            <option value='studyPrograms'>Program Studi</option>
-            <option value='classType'>Tipe Kelas</option>
-            <option value='room'>Ruangan</option>
-            <option value='lecturer'>Dosen</option>
-          </Form.Select>
-          {selectedFilter === 'studyPrograms' && (
-            <Typeahead
-              options={studyprograms.map(studyProgram => studyProgram.name)}
-              selected={selectedStudyPrograms}
-              onChange={handleStudyProgramsChange}
-              placeholder='Pilih Program Studi'
-              renderMenuItemChildren={(option, { text }) => (
-                <div>
-                  {text}
-                  <div>
-                    <small>{option}</small>
-                  </div>
-                </div>
-              )}
-              inputProps={{ style: { width: '100%' } }}
-            />
-          )}
-          {selectedFilter === 'classType' && (
-            <Typeahead
-              options={classTypes.map(classType => classType.name)}
-              selected={selectedClassType}
-              onChange={handleClassTypeChange}
-              placeholder='Pilih Tipe Kelas'
-              renderMenuItemChildren={(option, { text }) => (
-                <div>
-                  {text}
-                  <div>
-                    <small>{option}</small>
-                  </div>
-                </div>
-              )}
-              inputProps={{ style: { width: '100%' } }}
-            />
-          )}
-          {selectedFilter === 'room' && (
-            <Typeahead
-              options={rooms.map(room => room.name)}
-              selected={selectedRoom}
-              onChange={handleRoomChange}
-              placeholder='Pilih Ruangan'
-              renderMenuItemChildren={(option, { text }) => (
-                <div>
-                  {text}
-                  <div>
-                    <small>{option}</small>
-                  </div>
-                </div>
-              )}
-              inputProps={{ style: { width: '100%' } }}
-            />
-          )}
-          {selectedFilter === 'lecturer' && (
-            <div>
-              <Typeahead
-                options={searchOptions(
-                  lecturers.map(lecturer => lecturer.name),
-                  searchQuery
-                )}
-                selected={selectedLecturer}
-                onChange={handleLecturerChange}
-                placeholder='Pilih Dosen'
-                renderMenuItemChildren={(option, { text }) => (
-                  <div>
-                    {text}
-                    <div>
-                      <small>{option}</small>
-                    </div>
-                  </div>
-                )}
-                inputProps={{ style: { width: '100%'   } }}
-              />
-            </div>
-          )}
-        </div>
+      <div style={{ textDecoration: "none", color: "black", pointerEvents: "none" }}>
+        {args.date.toLocaleString("default", { weekday: weekdayFormat })}
       </div>
     );
   };
 
-  const CustomDayHeader = ({ label }) => {
-    return <div className='rbc-header'>{moment(label).format('ddd')}</div>;
+  function renderEventContent(eventInfo) {
+    const options = { hour: "2-digit", minute: "2-digit", hour12: false };
+    const eventStart = eventInfo.event.start.toLocaleTimeString([], options);
+    const eventEnd = eventInfo.event.end.toLocaleTimeString([], options);
+  
+    return (
+      <div>
+        <i
+          style={{
+            whitespace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            color: "#333",
+            maxWidth: "10px",
+          }}
+        >
+          <strong>{eventInfo.event.title}</strong>
+          <p>{eventInfo.event.extendedProps.lecturer}</p>
+          <p style={{ fontSize: "10px" }}>{eventInfo.event.extendedProps.room} | {eventStart} - {eventEnd}</p>
+        </i>
+      </div>
+    );
+  }
+  
+  const handleFilterClass = (e) => {
+    setFilterClass(e.target.value);
   };
 
-  const customDayPropGetter = date => {
-    const day = date.getDay();
-    if (day === 0) {
-      return {
-        className: 'custom-sunday',
-      };
-    }
-    return null;
+  const handleFilterLecturer = (e) => {
+    setFilterLecturer(e.target.value);
+  };
+
+  const handleFilterRoom = (e) => {
+    setFilterRoom(e.target.value);
   };
 
   return (
-    <Row className='mx-3'>
-      <Col>
-        <Calendar
-          localizer={localizer}
-          events={filteredEvents}
-          views={['week']}
-          defaultView='week'
-          components={{
-            toolbar: CustomToolbar,
-            dayHeader: CustomDayHeader,
-          }}
-          dayPropGetter={customDayPropGetter}
-          style={{ height: 500 }}
-          timeslots={4}
-          step={15}
-          min={new Date(0, 1, 0, 7, 30, 0)}
-          max={new Date(0, 7, 0, 23, 0, 0)}
-        />
-      </Col>
-      <footer className='text-center text-muted small mt-4'> Timetable Institut Bisnis dan Informatika Kesatuan</footer>
-    </Row>
+    <div>
+      <h1>Jadwal</h1>
+      <div>
+        <label>Filter Kelas:</label>
+        <select value={filterClass} onChange={handleFilterClass}>
+          <option value="">Semua Kelas</option>
+          {classTypes.map((classType) => (
+            <option key={classType.id} value={classType.id}>
+              {classType.id}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label>Filter Dosen:</label>
+        <select value={filterLecturer} onChange={handleFilterLecturer}>
+          <option value="">Semua Dosen</option>
+          {lecturers.map((lecturer) => (
+            <option key={lecturer.id} value={lecturer.id}>
+              {lecturer.id}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label>Filter Ruangan:</label>
+        <select value={filterRoom} onChange={handleFilterRoom}>
+          <option value="">Semua Ruangan</option>
+          {rooms.map((room) => (
+            <option key={room.id} value={room.id}>
+              {room.id}
+            </option>
+          ))}
+        </select>
+      </div>
+      <FullCalendar
+        height="auto"
+        contentHeight="auto"
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        initialView="timeGridWeek"
+        dayMaxEvents={true}
+        hiddenDays={[0]}
+        weekends={weekendsVisible}
+        dayHeaderContent={dayHeaderContent}
+        eventContent={renderEventContent}
+        initialDate="2023-10-01"
+        validRange={{
+          start: "2023-10-01",
+          end: "2023-10-08"
+        }}
+        headerToolbar={null}
+        buttonText={{
+          today: "current",
+          month: "month",
+          week: "week",
+          day: "day",
+          list: "list"
+        }}
+        events={currentEvents}
+        slotMinTime="07:30:00"
+        slotMaxTime="22:00:00"
+        className="full-width-calendar"
+      />
+    </div>
   );
-};
-
-export default MainPage;
+}
