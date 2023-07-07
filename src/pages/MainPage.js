@@ -78,7 +78,7 @@ export default function Jadwal() {
       });
   }
 
-  const isFullscreen = window.innerWidth > 768; // Menggunakan breakpoint 768px sebagai pemisah layar penuh dan layar kecil
+  const isFullscreen = window.innerWidth > 768; 
 
   const dayHeaderContent = (args) => {
     const weekdayFormat = isFullscreen ? "long" : "short";
@@ -94,8 +94,11 @@ export default function Jadwal() {
     const eventStart = eventInfo.event.start.toLocaleTimeString([], options);
     const eventEnd = eventInfo.event.end.toLocaleTimeString([], options);
   
+    const selectedLecturer = lecturers.find((lecturer) => lecturer.id === eventInfo.event.extendedProps.lecturer);
+    const selectedRoom = rooms.find((room) => room.id === eventInfo.event.extendedProps.room);
+  
     return (
-      <div>
+      <div className="p-1">
         <i
           style={{
             whitespace: "nowrap",
@@ -106,8 +109,9 @@ export default function Jadwal() {
           }}
         >
           <strong>{eventInfo.event.title}</strong>
-          <p>{eventInfo.event.extendedProps.lecturer}</p>
-          <p style={{ fontSize: "10px" }}>{eventInfo.event.extendedProps.room} | {eventStart} - {eventEnd}</p>
+          <p>{selectedLecturer ? selectedLecturer.name : ""}</p>
+          <p></p>
+          <p style={{ fontSize: "0.8rem" }}>{selectedRoom ? selectedRoom.name : ""} | {eventStart} - {eventEnd}</p>
         </i>
       </div>
     );
@@ -134,7 +138,7 @@ export default function Jadwal() {
           <option value="">Semua Kelas</option>
           {classTypes.map((classType) => (
             <option key={classType.id} value={classType.id}>
-              {classType.id}
+              {classType.name}
             </option>
           ))}
         </select>
@@ -145,7 +149,7 @@ export default function Jadwal() {
           <option value="">Semua Dosen</option>
           {lecturers.map((lecturer) => (
             <option key={lecturer.id} value={lecturer.id}>
-              {lecturer.id}
+              {lecturer.name}
             </option>
           ))}
         </select>
@@ -156,7 +160,7 @@ export default function Jadwal() {
           <option value="">Semua Ruangan</option>
           {rooms.map((room) => (
             <option key={room.id} value={room.id}>
-              {room.id}
+              {room.name}
             </option>
           ))}
         </select>
