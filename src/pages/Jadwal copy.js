@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback,Fragment } from 'react';
+import React, { useState, useCallback, Fragment, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import moment from 'moment';
@@ -9,10 +8,11 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { Col, Row } from 'react-bootstrap';
-import Sidebar from '../component/Sidebar/Sidebar';
 import './Pages.css';
-import {FcInfo} from 'react-icons/fc'
-import { ChevronLeft,ChevronRight } from 'react-bootstrap-icons';
+import { FcInfo } from 'react-icons/fc';
+import CustomNavbar from '../component/Sidebar/Navbar';
+import axios from 'axios';
+import { Typeahead } from 'react-bootstrap-typeahead';
 
 const localizer = momentLocalizer(moment);
 const DragAndDropCalendar = withDragAndDrop(Calendar);
@@ -22,29 +22,84 @@ const CustomToolbar = () => {
 };
 
 const CustomDayHeader = ({ label }) => {
-  return <div className="rbc-header">{moment(label).format('ddd')}</div>;
+  const isSunday = moment(label).day() === 0; 
+  const dayHeaderStyle = {
+    backgroundColor: isSunday ? '#F4F4F4' : 'white', // Set gray background for Sunday, white for other days
+  };
+
+  return (
+    <div className={`rbc-header ${isSunday ? 'sunday' : ''}`} style={dayHeaderStyle}>
+      {moment(label).format('ddd')}
+    </div>
+  );
 };
 
-const Jadwal = () => {
+const Jadwalcopy = () => {
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showFormModal, setShowFormModal] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
-  const [dosen, setDosen] = useState('');
-  const [ruangan, setRuangan] = useState('');
-  const [programStudi, setProgramStudi] = useState('');
-  const [kelas, setKelas] = useState('');
-  const [isLibur, setIsLibur] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  
-    const toggleSidebar = () => {
-      setSidebarVisible(!sidebarVisible);
-    };
+  const [lecturer, setLecturer] = useState('');
+  const [room, setRoom] = useState('');
+  const [semester, setSemester] = useState('');
+  const [studyProgram, setStudyProgram] = useState('');
+  const [classtype, setClassType] = useState('');
+  const [isHoliday, setIsHoliday] = useState(false);
+  const [selectedTime, setSelectedTime] = useState('');
+  const [lecturers, setLecturers] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [studyPrograms, setStudyPrograms] = useState([]);
+  const [classTypes, setClassTypes] = useState([]);
 
-    // const [showAddModal, setShowAddModal] = useState(false);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('');
+  const [selectedStudyPrograms, setSelectedStudyPrograms] = useState([]);
+  const [selectedClassType, setSelectedClassType] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState([]);
+  const [selectedSemester, setSelectedSemester] = useState([]);
+  const [selectedLecturer, setSelectedLecturer] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleFilterChange = (e) => {
+    setSelectedFilter(e.target.value);
+    setSelectedStudyPrograms([]);
+    setSelectedClassType([]);
+    setSelectedRoom([]);
+    setSelectedLecturer([]);
+    setSearchQuery('');
+  };
+  
+  const handleStudyProgramsChange = (selected) => {
+    setSelectedStudyPrograms(selected);
+  };
+  
+  const handleClassTypeChange = (selected) => {
+    setSelectedClassType(selected);
+  };
+  
+  const handleRoomChange = (selected) => {
+    setSelectedRoom(selected);
+  };
+
+  const handleSemesterChange = (selected) => {
+    setSelectedSemester(selected);
+  };
+  
+  const handleLecturerChange = (selected) => {
+    setSelectedLecturer(selected);
+  };
+  
+  const searchOptions = (options, query) => {
+    return options.filter((option) =>
+      option.toLowerCase().includes(query.toLowerCase())
+    );
+  };
 
   const handleOpenFormModal = useCallback(() => {
     setShowFormModal(true);
+    setSelectedTime('');
   }, []);
 
   const handleCloseFormModal = useCallback(() => {
@@ -58,31 +113,46 @@ const Jadwal = () => {
 
       if (eventTitle) {
         const newEvent = {
-          id: generateUniqueId(),
           title: eventTitle,
           start: selectedEvent.start,
           end: selectedEvent.end,
-          dosen,
-          ruangan,
-          programStudi,
-          kelas,
-          isLibur : isLibur,
+          isHoliday: isHoliday,
+          lecturerId:parseInt(lecturer),
+          roomId: parseInt(room),
+          semesterId: parseInt(semester),
+          studyProgramId: parseInt(studyProgram),
+          classTypeId: parseInt(classtype),
         };
-        setCalendarEvents((prevEvents) => [...prevEvents, newEvent]);
-        // Simpan event baru ke database di sini
+
+        // setCalendarEvents((prevEvents) => [...prevEvents, newEvent]);
+        axios 
+        .post('http://localhost:3000/api/schedules', newEvent)
+        .then((response) => {
+          console.log(response.data); 
+          setCalendarEvents((prevEvents) => [...prevEvents, newEvent]);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+        console.log(newEvent)
 
         resetFormFields();
         setSelectedEvent(null);
         handleCloseFormModal();
       }
     },
-    [eventTitle, selectedEvent.start, selectedEvent.end, dosen, ruangan, programStudi, kelas, isLibur, handleCloseFormModal]
+    [eventTitle, selectedEvent, lecturer, room,semester, studyProgram, classtype, handleCloseFormModal]
   );
 
   const handleSelectSlot = useCallback(
     (slotInfo) => {
-      setSelectedEvent(slotInfo);
-      handleOpenFormModal();
+      if (!isSunday(slotInfo.start)) {
+        setSelectedEvent(slotInfo);
+        handleOpenFormModal();
+        const startTime = moment(slotInfo.start).format('HH:mm');
+        const endTime = moment(slotInfo.end).format('HH:mm');
+        setSelectedTime(`${startTime} - ${endTime}`);
+      }
     },
     [handleOpenFormModal]
   );
@@ -92,327 +162,413 @@ const Jadwal = () => {
       const { allDay } = event;
       if (!allDay && droppedOnAllDaySlot) {
         event.allDay = true;
+      } else if (allDay && !droppedOnAllDaySlot) {
+        event.allDay = false;
       }
-
+  
       setCalendarEvents((prevEvents) => {
         const updatedEvents = prevEvents.map((prevEvent) =>
           prevEvent.id === event.id ? { ...prevEvent, start, end, allDay } : prevEvent
         );
-        // Simpan perubahan ke database di sini
+        // Save updatedEvents ke database di sini
         return updatedEvents;
       });
     },
     []
   );
+  
 
-  const handleEventResize = useCallback(
-    ({ event, start, end }) => {
-      setCalendarEvents((prevEvents) => {
-        const updatedEvents = prevEvents.map((prevEvent) =>
-          prevEvent.id === event.id ? { ...prevEvent, start, end } : prevEvent
-        );
-        // Simpan perubahan ke database di sini
-        return updatedEvents;
-      });
+  const eventStyleGetter = useCallback(
+    (event, start, end, isSelected) => {
+      const style = {
+        backgroundColor: event.isHoliday ? '#FFE9ED' : '#E9EFFF',
+        borderRadius: '5px',
+        color: 'black',
+        borderLeft: event.isHoliday ? '5px solid #E95252' : '5px solid #5272E9',
+        display: 'block',
+      };
+
+      if (isSunday(start)) {
+        style.backgroundColor = '#F4F4F4';
+        style.borderLeft = '5px solid red'; // Change the border color to red
+        style.cursor = 'not-allowed';
+      }
+  
+      return {
+        style,
+      };
     },
     []
   );
-
-  const handleEventClick = useCallback(
-    (event) => {
-      setSelectedEvent(event);
-    },
-    []
-  );
-
-  const handleEditEvent = useCallback(
-    (updatedEvent) => {
-      setCalendarEvents((prevEvents) => {
-        const updatedEvents = prevEvents.map((prevEvent) =>
-          prevEvent.id === updatedEvent.id ? updatedEvent : prevEvent
-        );
-        // Simpan perubahan ke database di sini
-        return updatedEvents;
-      });
-      setSelectedEvent(null);
-    },
-    []
-  );
-
-  const handleDeleteEvent = useCallback(
-    (eventId) => {
-      setCalendarEvents((prevEvents) => {
-        const updatedEvents = prevEvents.filter((event) => event.id !== eventId);
-        // Hapus event dari database di sini
-        return updatedEvents;
-      });
-      setSelectedEvent(null);
-    },
-    []
-  );
-
-  const generateUniqueId = () => {
-    return Math.floor(Math.random() * 100000);
-  };
 
   const resetFormFields = () => {
     setEventTitle('');
-    setDosen('');
-    setRuangan('');
-    setProgramStudi('');
-    setKelas('');
+    setLecturer('');
+    setRoom('');
+    setSemester('');
+    setStudyProgram('');
+    setClassType('');
+    setIsHoliday(false);
   };
 
-  const eventTimeRangeFormat = ({ start, end }) => {
-    const startTime = moment(start).format('ddd HH:mm');
-    const endTime = moment(end).format('HH:mm');
-    return `${startTime} - ${endTime}`;
+  const isSunday = (date) => {
+    return moment(date).day() === 0;
   };
 
-  const eventStyleGetter = (event, start, end, isSelected) => {
-    let style = {
-      backgroundColor: '#3174ad',
-      color: '#fff',
-    };
+
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+  };
+
+  useEffect(() => {
+    axios
+    .get('http://localhost:3000/api/lecturers') 
+    .then((response) => setLecturers(response.data))
+    .catch((error) => console.error('Error fetching lecturers:', error));
+
+    axios
+      .get('http://localhost:3000/api/rooms') 
+      .then((response) => setRooms(response.data))
+      .catch((error) => console.error('Error fetching rooms:', error));
+
+      axios
+      .get('http://localhost:3000/api/semesters') 
+      .then((response) => setSemesters(response.data))
+      .catch((error) => console.error('Error fetching semesters:', error));
   
-    if (event.isLibur) {
-      style.backgroundColor = '#ff0000';
-    };
-  };
+    axios
+      .get('http://localhost:3000/api/studyprograms') 
+      .then((response) => setStudyPrograms(response.data))
+      .catch((error) => console.error('Error fetching study programs:', error));
+  
+    axios
+      .get('http://localhost:3000/api/classtypes') 
+      .then((response) => setClassTypes(response.data))
+      .catch((error) => console.error('Error fetching class types:', error));
 
-  const customDayPropGetter = (date) => {
-    const day = date.getDay();
-    if (day === 0) {
-      // Mengubah warna latar belakang kolom Minggu menjadi pink
-      return {
-        className: 'custom-sunday',
-      };
-    }
-    return null;
-  };
+    axios
+      .get('http://localhost:3000/api/schedules') 
+      .then((response) => console.log(response.data))
+      .catch((error) => console.error('Error fetching class types:', error));
+    
+  }, []);
+
+  const EventRender = (info) =>{
+    console.log(info);
+    return (
+      <div>
+        Test
+      </div>
+    )
+  }
+  
 
   return (
-    <div>
-          <style>
-      {`
-      .custom-sunday {
-        background-color: pink;
-      }
-    `}
-    </style>
-    <Row className='content'>
-    {sidebarVisible && <Sidebar />}
-        <Col sm={sidebarVisible ? 10 : 12} style={{ backgroundColor: '#ffffff', padding: '20px' }}>
-        <Fragment>
-        <Row className='spacebet'>
-          <Col>
-          <Row>
-            <Col className="d-flex align-items-center">
-              <Button variant="light" onClick={toggleSidebar} className="me-2 mb-2">
-                {sidebarVisible ?  <ChevronLeft /> : <ChevronRight />}
-              </Button>
-              <h4>IBIK</h4>
-              <h5>timetable</h5>
-            </Col>
-          </Row>
-          </Col>
-          <Col md={6} className="text-md-end">
-            <p><b>Admin</b></p>
-          </Col>
-        </Row>
-          <div className="info-container">
+    <Fragment>
+      <CustomNavbar />
+      <div className="main-container mx-2 mt-2">
+        <div className="page-content">
+          <div className="container-fluid">
+                <h5>Manajemen Jadwal</h5>
+            <div className="info-container">
             <p> <FcInfo/> klik pada kolom untuk menambahkan jadwal baru, geser kotak jadwal untuk memindahkan waktu.</p>
           </div>
-
-          <div className="calendar-container">
-            <DragAndDropCalendar
-              localizer={localizer}
-              events={calendarEvents}
-              startAccessor="start"
-              endAccessor="end"
-              selectable
-              resizable
-              onEventDrop={handleEventDrop}
-              onEventResize={handleEventResize}
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleEventClick}
-              timeslots={4}
-              step={15}
-              defaultView="week"
-              components={{
-                toolbar: CustomToolbar,
-                dayHeader: CustomDayHeader,
-              }}
-              eventPropGetter={eventStyleGetter}
-              dayPropGetter={customDayPropGetter}
+            
+            <div className='filter-container'>
+          <Form.Select value={selectedFilter} onChange={handleFilterChange}>
+            <option value=''>Pilih Filter</option>
+            <option value='studyPrograms'>Program Studi</option>
+            <option value='classType'>Kelas</option>
+            <option value='room'>Ruangan</option>
+            <option value='semester'>Semester</option>
+            <option value='lecturer'>Dosen</option>
+          </Form.Select>
+          {selectedFilter === 'studyPrograms' && (
+            <Typeahead
+              options={studyPrograms.map(studyProgram => studyProgram.name)}
+              selected={selectedStudyPrograms}
+              onChange={handleStudyProgramsChange}
+              placeholder='Pilih Program Studi'
+              renderMenuItemChildren={(option, { text }) => (
+                <div>
+                  {text}
+                  <div>
+                    <small>{option}</small>
+                  </div>
+                </div>
+              )}
+              inputProps={{ style: { width: '100%' } }}
             />
-          </div>
-
-          {selectedEvent && (
-            <div className='col sm-2'>
-              <h2>Edit Event</h2>
-              <Form onSubmit={() => handleEditEvent(selectedEvent)}>
-                <Form.Group controlId="eventTitle">
-                  <Form.Label>Mata Pelajaran:</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={selectedEvent.title}
-                    onChange={(e) =>
-                      setSelectedEvent((prevEvent) => ({ ...prevEvent, title: e.target.value }))
-                    }
-                  />
-                </Form.Group>
-                <Form.Group controlId="dosen">
-                  <Form.Label>Dosen:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={selectedEvent.dosen}
-                    onChange={(e) =>
-                      setSelectedEvent((prevEvent) => ({ ...prevEvent, dosen: e.target.value }))
-                    }
-                  >
-                    <option value="">-- Pilih Dosen --</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="ruangan">
-                  <Form.Label>Ruangan:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={selectedEvent.ruangan}
-                    onChange={(e) =>
-                      setSelectedEvent((prevEvent) => ({ ...prevEvent, ruangan: e.target.value }))
-                    }
-                  >
-                    <option value="">-- Pilih Ruangan --</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="programStudi">
-                  <Form.Label>Program Studi:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={selectedEvent.programStudi}
-                    onChange={(e) =>
-                      setSelectedEvent((prevEvent) => ({ ...prevEvent, programStudi: e.target.value }))
-                    }
-                  >
-                    <option value="">-- Pilih Program Studi --</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="kelas">
-                  <Form.Label>Kelas:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={selectedEvent.kelas}
-                    onChange={(e) =>
-                      setSelectedEvent((prevEvent) => ({ ...prevEvent, kelas: e.target.value }))
-                    }
-                  >
-                    <option value="">-- Pilih Kelas --</option>
-                    <option value="Kelas 1">Kelas 1</option>
-                    <option value="Kelas 2">Kelas 2</option>
-                    <option value="Kelas 3">Kelas 3</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="formLibur">
-                <Form.Check
-                  type="checkbox"
-                  label="Libur"
-                  checked={isLibur}
-                  onChange={(e) => setIsLibur(e.target.checked)}
-                />
-              </Form.Group>
-
-              <Row className='row-justify-content-end mt-2'>
-            <Col>
-              <Button variant="primary" type="submit" style={{ marginRight: '2px' }}>Save</Button>
-              <Button variant="secondary" onClick={() => setSelectedEvent(null)} style={{ marginRight: '2px' }}>Cancel</Button>
-              <Button variant="danger" onClick={() => handleDeleteEvent(selectedEvent.id)}>Delete</Button>
-            </Col>
-          </Row>
-              </Form>
-            </div>
+          )}
+          {selectedFilter === 'classType' && (
+            <Typeahead
+              options={classTypes.map(classType => classType.name)}
+              selected={selectedClassType}
+              onChange={handleClassTypeChange}
+              placeholder='Pilih Tipe Kelas'
+              renderMenuItemChildren={(option, { text }) => (
+                <div>
+                  {text}
+                  <div>
+                    <small>{option}</small>
+                  </div>
+                </div>
+              )}
+              inputProps={{ style: { width: '100%' } }}
+            />
+          )}
+          {selectedFilter === 'room' && (
+            <Typeahead
+              options={rooms.map(room => room.name)}
+              selected={selectedRoom}
+              onChange={handleRoomChange}
+              placeholder='Pilih Ruangan'
+              renderMenuItemChildren={(option, { text }) => (
+                <div>
+                  {text}
+                  <div>
+                    <small>{option}</small>
+                  </div>
+                </div>
+              )}
+              inputProps={{ style: { width: '100%' } }}
+            />
           )}
 
-          <Modal show={showFormModal} onHide={handleCloseFormModal}>
-            <Modal.Header closeButton>
-              <Modal.Title>Tambah Jadwal</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form onSubmit={handleFormSubmit}>
-                <Form.Group controlId="eventTitle">
-                  <Form.Label>Mata Pelajaran:</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                  />
-                </Form.Group>
-                <Form.Group controlId="dosen">
-                  <Form.Label>Dosen:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={dosen}
-                    onChange={(e) => setDosen(e.target.value)}
-                  >
-                    <option value="">-- Pilih Dosen --</option>
-                    <option value="Dosen 1">Septian Cahyadi</option>
-                    <option value="Dosen 2">Febri Damatraseta</option>
-                    <option value="Dosen 3">Edi Nurachmad</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="ruangan">
-                  <Form.Label>Ruangan:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={ruangan}
-                    onChange={(e) => setRuangan(e.target.value)}
-                  >
-                    <option value="">-- Pilih Ruangan --</option>
-                    <option value="Ruangan 1">215</option>
-                    <option value="Ruangan 2">305</option>
-                    <option value="Ruangan 3">305</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="programStudi">
-                  <Form.Label>Program Studi:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={programStudi}
-                    onChange={(e) => setProgramStudi(e.target.value)}
-                  >
-                    <option value="">-- Pilih Program Studi --</option>
-                    <option value="Program Studi 1">Teknologi Informasi</option>
-                    <option value="Program Studi 2">Sistem Informasi</option>
-                    <option value="Program Studi 3">Pariwisata</option>
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="kelas">
-                  <Form.Label>Kelas:</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={kelas}
-                    onChange={(e) => setKelas(e.target.value)}
-                  >
-                    <option value="">-- Pilih Kelas --</option>
-                    <option value="Kelas 1">TI 20 PA</option>
-                    <option value="Kelas 2">TI 21 PA</option>
-                    <option value="Kelas 3">TI 19  </option>
-                  </Form.Control>
-                </Form.Group>
-                <Button variant="primary" type="submit">
-                  Save
-                </Button>
-                <Button variant="secondary" onClick={handleCloseFormModal}>
-                  Cancel
-                </Button>
-              </Form>
-            </Modal.Body>
-          </Modal>
-        </Fragment>
-          </Col>
-    </Row>
+          {selectedFilter === 'semester' && (
+            <Typeahead
+              options={semesters.map(semester => semester.name)}
+              selected={selectedSemester}
+              onChange={handleSemesterChange}
+              placeholder='Pilih Ruangan'
+              renderMenuItemChildren={(option, { text }) => (
+                <div>
+                  {text}
+                  <div>
+                    <small>{option}</small>
+                  </div>
+                </div>
+              )}
+              inputProps={{ style: { width: '100%' } }}
+            />
+          )}
 
-    </div>
+          {selectedFilter === 'lecturer' && (
+            <div>
+              <Typeahead
+                options={searchOptions(
+                  lecturers.map(lecturer => lecturer.name),
+                  searchQuery
+                )}
+                selected={selectedLecturer}
+                onChange={handleLecturerChange}
+                placeholder='Pilih Lecturer'
+                renderMenuItemChildren={(option, { text }) => (
+                  <div>
+                    {text}
+                    <div>
+                      <small>{option}</small>
+                    </div>
+                  </div>
+                )}
+                inputProps={{ style: { width: '100%'   } }}
+              />
+            </div>
+          )}
+        </div>
+
+            <div className="calendar" >
+              
+              <DragAndDropCalendar
+                localizer={localizer}
+                selectable
+                events={calendarEvents}
+                eventContent={(info)=> EventRender(info)}
+                defaultView="week"
+                defaultDate={new Date(2023,9,1)}
+                startAccessor="start"
+                endAccessor="end"
+                timeslots={4}
+                step={15}
+                min={new Date(0, 1, 0, 7, 30, 0)}
+                max={new Date(0, 7, 0, 23, 0, 0)}
+                style={{ minHeight: 500 }}
+                onSelectSlot={handleSelectSlot}
+                onEventDrop={handleEventDrop}
+                components={{
+                  toolbar: CustomToolbar,
+                  day: {
+                    header: CustomDayHeader,
+                  },
+                }}
+                eventPropGetter={eventStyleGetter}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Modal */}
+      <Modal show={showFormModal} onHide={handleCloseFormModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedEvent && moment(selectedEvent.start).format('dddd')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleFormSubmit}>
+            <Form.Group as={Row}>
+                <Form.Label column sm="3">
+                  Jam
+                </Form.Label>
+                <Col sm="9">
+                  <Form.Control type="text" value={selectedTime} disabled />
+                </Col>
+              </Form.Group>
+              <Form.Group as={Row} controlId="formEventTitle">
+          <Form.Label column sm="3"> Mata Kuliah </Form.Label>
+          <Col sm="9">
+            <Form.Control
+              type="text"
+              placeholder="masukkan Nama Mata Kuliah"
+              value={eventTitle}
+              onChange={(e) => setEventTitle(e.target.value)}
+              required
+            />
+          </Col>
+        </Form.Group>
+        <Form.Group as={Row} controlId="formLecturer">
+        <Form.Label column sm="3">
+          Lecturer
+        </Form.Label>
+        <Col sm="9">
+          <Form.Select
+            value={lecturer}
+            onChange={(e) => setLecturer(e.target.value)}
+          >
+            <option value="">Pilih Dosen</option>
+            {lecturers.map((lecturer) => (
+              <option key={lecturer.id} value={lecturer.id}>
+                {lecturer.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      <Form.Group as={Row} controlId="formRoom">
+        <Form.Label column sm="3">
+          Room
+        </Form.Label>
+        <Col sm="9">
+          <Form.Select
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+          >
+            <option value="">Pilih Ruangan</option>
+            {rooms.map((room) => (
+              <option key={room.id} value={room.id}>
+                {room.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      <Form.Group as={Row} controlId="formSemester">
+        <Form.Label column sm="3">
+          Semester
+        </Form.Label>
+        <Col sm="9">
+          <Form.Select
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+          >
+            <option value="">Pilih Semester</option>
+            {semesters.map((semester) => (
+              <option key={semester.id} value={semester.id}>
+                {semester.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      <Form.Group as={Row} controlId="formStudyProgram">
+        <Form.Label column sm="3">
+          Prodi
+        </Form.Label>
+        <Col sm="9">
+          <Form.Select
+            value={studyProgram}
+            onChange={(e) => setStudyProgram(e.target.value)}
+          >
+            <option value="">Pilih Prodi</option>
+            {studyPrograms.map((studyProgram) => (
+              <option key={studyProgram.id} value={studyProgram.id}>
+                {studyProgram.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      <Form.Group as={Row} controlId="formClassType">
+        <Form.Label column sm="3">
+          Class
+        </Form.Label>
+        <Col sm="9">
+          <Form.Select
+            value={classtype}
+            onChange={(e) => setClassType(e.target.value)}
+          >
+            <option value="">Pilih Kelas</option>
+            {classTypes.map((classType) => (
+              <option key={classType.id} value={classType.id}>
+                {classType.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+        <Form.Group as={Row} controlId="formIsHoliday">
+          <Form.Label column sm="3">
+            Libur
+          </Form.Label>
+          <Col sm="9" className='mt-2'>
+            <Form.Check
+              type="checkbox"
+              label="Kelas diliburkan?"
+              checked={isHoliday}
+              onChange={(e) => setIsHoliday(e.target.checked)}
+            />
+          </Col>
+        </Form.Group>
+
+
+            <div className="text-end">
+              <Button variant="light" className="me-2 " style={{ borderRadius: '15px' }} onClick={handleCloseFormModal}>
+                Batal
+              </Button>
+              <Button variant="primary" type="submit" className='custom-button'>
+                Simpan Jadwal
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Add Modal */}
+      <Modal show={showAddModal} onHide={handleCloseAddModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create Event</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <FcInfo />select the time on the slot by dragging on the table to add the schedule in the table.
+          </p>
+        </Modal.Body>
+      </Modal>
+    </Fragment>
   );
 };
 
@@ -420,4 +576,4 @@ CustomDayHeader.propTypes = {
   label: PropTypes.string.isRequired,
 };
 
-export default Jadwal;
+export default Jadwalcopy;

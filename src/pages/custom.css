@@ -1,0 +1,32 @@
+/* override day number color and size */
+.fc-day-number {
+    font-size: 1.5em;
+    color: #5c005c;
+  }
+  
+  /* override day title color and size */
+  .fc-day-header {
+    font-size: 1.5em;
+    color: #00b294;
+  }
+
+  .fc-col-header-cell{
+    background-color: #ffffff;
+    font-weight: bold;
+    text-decoration: none !important;
+    color: black !important;
+  }
+  
+
+  .fc-event {
+    background-color: #E9EFFF !important;
+    border-color: #5272E9 !important;
+    color: black !important;
+    border-left-width: 5px !important;
+    
+  }
+
+  #calendar-container {
+    width: 100%;
+  }
+  
