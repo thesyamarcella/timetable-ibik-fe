@@ -25,8 +25,9 @@
     border-left-width: 5px !important;
     
   }
-
-  #calendar-container {
-    width: 100%;
+  
+  .fc-scroller {
+    height: auto !important;
   }
+
   

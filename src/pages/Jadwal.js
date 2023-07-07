@@ -13,6 +13,7 @@ import axios from "axios";
 
 import events from "./events";
 import CustomModal from "./component/CustomModal";
+import CustomNavbar from "../component/Sidebar/Navbar";
 
 export default function Jadwal() {
   const [weekendsVisible, setWeekendsVisible] = useState(true);
@@ -31,10 +32,13 @@ export default function Jadwal() {
   const [studyProgram, setStudyProgram] = useState("");
   const [classtype, setClasstype] = useState("");
   const [lecturers, setLecturers] = useState([]);
-const [rooms, setRooms] = useState([]);
-const [semesters, setSemesters] = useState([]);
-const [studyPrograms, setStudyPrograms] = useState([]);
-const [classTypes, setClassTypes] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [studyPrograms, setStudyPrograms] = useState([]);
+  const [classTypes, setClassTypes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+
 
 useEffect(() => {
   axios
@@ -102,6 +106,21 @@ function resetForm() {
     }
   }
 
+  function handleSearch() {
+    // Mendapatkan semua jadwal dari state atau sumber data lainnya
+    const allEvents = [...events]; // Mengganti `events` dengan data jadwal yang ada
+  
+    // Melakukan filter berdasarkan nilai searchQuery
+    const filteredEvents = allEvents.filter((event) =>
+      event.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  
+    // Memperbarui state currentEvents dengan jadwal yang sudah difilter
+    setCurrentEvents(filteredEvents);
+  }
+  
+  
+
   function renderEventContent(eventInfo) {
     const options = { hour: "2-digit", minute: "2-digit", hour12: false };
     const eventStart = eventInfo.event.start.toLocaleTimeString([], options);
@@ -111,7 +130,7 @@ function resetForm() {
       <div>
         <i
           style={{
-            whiteSpace: "nowrap",
+            whitespace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
             color: "#333",
@@ -137,8 +156,33 @@ function resetForm() {
     setModal(true);
   }
 
-  function handleEvents(events) {
-    setCurrentEvents(events);
+  useEffect(() => {
+    handleEvents();
+  }, []);
+  
+  function handleEvents() {
+    axios
+      .get("http://localhost:3000/api/schedules")
+      .then((response) => {
+        const events = response.data.map((schedule) => ({
+          id: schedule.id,
+          title: schedule.title,
+          start: new Date(schedule.start),
+          end: new Date(schedule.end),
+          isHoliday: schedule.isHoliday,
+          extendedProps: {
+            lecturer: schedule.Lecturer ? schedule.Lecturer.name : "",
+            room: schedule.Room ? schedule.Room.name : "",
+            semester: schedule.Semester ? schedule.Semester.name : "",
+            classType: schedule.ClassType ? schedule.ClassType.name : "",
+            studyProgram: schedule.StudyProgram ? schedule.StudyProgram.name : "",
+          },
+        }));
+        setCurrentEvents(events);
+      })
+      .catch((error) => {
+        console.error("Error fetching events:", error);
+      });
   }
 
   function handleEventDrop(checkInfo) {
@@ -152,41 +196,118 @@ function resetForm() {
   }
 
   function handleEdit() {
-    state.clickInfo.event.setStart(start);
-    state.clickInfo.event.setEnd(end);
-    state.clickInfo.event.mutate({
-      standardProps: { title }
-    });
-    handleClose();
+    if (!state.clickInfo || !state.clickInfo.event || !start || !end) {
+      console.error("Invalid data for editing event");
+      return;
+    }
+  
+    const { event } = state.clickInfo;
+    const newStart = start || event.start;
+    const newEnd = end || event.end;
+  
+    event.setDates(newStart, newEnd);
+    event.setProp("title", title);
+  
+    axios
+      .put(`http://localhost:3000/api/schedules/${event.id}`, {
+        title: title,
+        start: newStart.toISOString(),
+        end: newEnd.toISOString(),
+        isHoliday: isHoliday,
+        lecturerId: parseInt(lecturer),
+        semesterId: parseInt(semester),
+        classTypeId: parseInt(classtype),
+        roomId: parseInt(room),
+        studyProgramId: parseInt(studyProgram),
+      })
+      .then((response) => {
+        const updatedSchedule = response.data;
+        console.log("Updated schedule:", updatedSchedule);
+        handleClose();
+      })
+      .catch((error) => {
+        console.error("Error updating schedule:", error);
+        // Rollback event changes if update fails
+        event.setDates(state.clickInfo.oldStart, state.clickInfo.oldEnd);
+        event.setProp("title", state.clickInfo.oldTitle);
+      });
   }
-
+  
   function handleSubmit() {
-    const newEvent = {
-      id: nanoid(),
-      title,
-      start: state.selectInfo?.startStr || start.toISOString(),
-      end: state.selectInfo?.endStr || end.toISOString(),
-      isHoliday,
+    axios
+    .post("http://localhost:3000/api/schedules", {
+      title: title,
+      start: start,
+      end: end,
+      isHoliday: isHoliday,
       lecturerId: parseInt(lecturer),
-      roomId: parseInt(room),
       semesterId: parseInt(semester),
-      studyProgramId: parseInt(studyProgram),
       classTypeId: parseInt(classtype),
-      extendedProps: {
-        room,
-        lecturer
-      }
-    };
-
-    let calendarApi = calendarRef.current.getApi();
-    calendarApi.addEvent(newEvent);
+      roomId: parseInt(room),
+      studyProgramId: parseInt(studyProgram),
+    })
+    .then((response) => {
+      const createdSchedule = response.data;
+      console.log("Created schedule:", createdSchedule);
+  
+      let calendarApi = calendarRef.current.getApi();
+      calendarApi.addEvent({
+        id: createdSchedule.id,
+        title: createdSchedule.title,
+        start: new Date(createdSchedule.start),
+        end: new Date(createdSchedule.end),
+        isHoliday: createdSchedule.isHoliday,
+        extendedProps: {
+          lecturer: createdSchedule.Lecturer ? createdSchedule.Lecturer.name : "",
+        room: createdSchedule.Room ? createdSchedule.Room.name : "",
+        semester: createdSchedule.Semester ? createdSchedule.Semester.name : "",
+        classType: createdSchedule.ClassType ? createdSchedule.ClassType.name : "",
+        studyProgram: createdSchedule.StudyProgram ? createdSchedule.StudyProgram.name : "",
+        },
+      });
+    })
+    .catch((error) => {
+      console.error("Error creating schedule:", error);
+    });
+  
     handleClose();
   }
 
-  function handleDelete() {
-    state.clickInfo.event.remove();
-    handleClose();
-  }
+function handleDelete() {
+  const { event } = state.clickInfo;
+
+  // Hapus acara dari kalender
+  event.remove();
+
+  // Hapus acara dari server menggunakan Axios
+  axios
+    .delete(`http://localhost:3000/api/schedules/${event.id}`)
+    .then((response) => {
+      console.log("Schedule deleted:", response.data);
+      handleClose();
+    })
+    .catch((error) => {
+      console.error("Error deleting schedule:", error);
+      // Jika ada kesalahan, tambahkan kembali acara yang dihapus dari kalender
+      let calendarApi = calendarRef.current.getApi();
+      calendarApi.addEvent({
+        id: event.id,
+        title: event.title,
+        start: event.start,
+        end: event.end,
+        isHoliday: event.extendedProps.isHoliday,
+        extendedProps: {
+          lecturer: event.extendedProps.lecturer,
+          room: event.extendedProps.room,
+          semester: event.extendedProps.semester,
+          classType: event.extendedProps.classType,
+          studyProgram: event.extendedProps.studyProgram,
+        },
+      });
+      handleClose();
+    });
+}
+
 
   function handleClose() {
     setTitle("");
@@ -199,8 +320,16 @@ function resetForm() {
   const [state, setState] = useState({});
 
   return (
-    <div className="App">
-      <h1>Hello FullCalendar</h1>
+
+    <div className="main-container mx-2 mt-2">
+        <CustomNavbar/>
+    <div className="page-content">
+      <div className="container-fluid">
+        <h5>Manajemen Jadwal</h5>
+        <div className="info-container">
+        <p>  klik pada kolom untuk menambahkan jadwal baru, geser kotak jadwal untuk memindahkan waktu.</p>
+      </div>
+      <div>
       <Container>
         <FullCalendar
           ref={calendarRef}
@@ -228,7 +357,7 @@ function resetForm() {
             day: "day",
             list: "list"
           }}
-          events={events}
+          events={currentEvents}
           select={handleDateSelect}
           eventContent={renderEventContent}
           eventClick={handleEventClick}
@@ -385,6 +514,11 @@ function resetForm() {
       >
         Do you want to {state.state} this event?
       </CustomModal>
+      </div>
+
+      </div>
     </div>
+  </div>
+
   );
 }
