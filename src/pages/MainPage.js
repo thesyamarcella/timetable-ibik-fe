@@ -4,6 +4,9 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { Typeahead } from 'react-bootstrap-typeahead';
+import { FormGroup, Label, Input } from 'reactstrap';
+
 
 export default function Jadwal() {
   const [weekendsVisible, setWeekendsVisible] = useState(true);
@@ -117,6 +120,9 @@ export default function Jadwal() {
     );
   }
   
+
+  
+  
   const handleFilterClass = (e) => {
     setFilterClass(e.target.value);
   };
@@ -130,41 +136,65 @@ export default function Jadwal() {
   };
 
   return (
-    <div>
-      <h1>Jadwal</h1>
-      <div>
-        <label>Filter Kelas:</label>
-        <select value={filterClass} onChange={handleFilterClass}>
-          <option value="">Semua Kelas</option>
-          {classTypes.map((classType) => (
-            <option key={classType.id} value={classType.id}>
-              {classType.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label>Filter Dosen:</label>
-        <select value={filterLecturer} onChange={handleFilterLecturer}>
-          <option value="">Semua Dosen</option>
-          {lecturers.map((lecturer) => (
-            <option key={lecturer.id} value={lecturer.id}>
-              {lecturer.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label>Filter Ruangan:</label>
-        <select value={filterRoom} onChange={handleFilterRoom}>
-          <option value="">Semua Ruangan</option>
-          {rooms.map((room) => (
-            <option key={room.id} value={room.id}>
-              {room.name}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div className="px-5">
+      <h4 className="my-3">IBIKtimetable</h4>
+      <div className="row">
+  <FormGroup className="col">
+    <Input
+      type="select"
+      name="filterClass"
+      id="filterClass"
+      value={filterClass}
+      onChange={handleFilterClass}
+      style={{ width: '200px', margin: '0 auto' }}
+    >
+      <option value="">Semua Kelas</option>
+      {classTypes.map((classType) => (
+        <option key={classType.id} value={classType.id}>
+          {classType.name}
+        </option>
+      ))}
+    </Input>
+  </FormGroup>
+
+  <FormGroup className="col">
+    <Input
+      type="select"
+      name="filterLecturer"
+      id="filterLecturer"
+      value={filterLecturer}
+      onChange={handleFilterLecturer}
+      style={{ width: '200px', margin: '0 auto' }}
+    >
+      <option value="">Semua Dosen</option>
+      {lecturers.map((lecturer) => (
+        <option key={lecturer.id} value={lecturer.id}>
+          {lecturer.name}
+        </option>
+      ))}
+    </Input>
+  </FormGroup>
+
+  <FormGroup className="col">
+    <Input
+      type="select"
+      name="filterRoom"
+      id="filterRoom"
+      value={filterRoom}
+      onChange={handleFilterRoom}
+      style={{ width: '200px', margin: '0 auto' }}
+    >
+      <option value="">Semua Ruangan</option>
+      {rooms.map((room) => (
+        <option key={room.id} value={room.id}>
+          {room.name}
+        </option>
+      ))}
+    </Input>
+  </FormGroup>
+</div>
+
+
       <FullCalendar
         height="auto"
         contentHeight="auto"

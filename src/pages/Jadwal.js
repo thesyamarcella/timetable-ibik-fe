@@ -110,22 +110,30 @@ const handleCloseModal = () => {
     const options = { hour: "2-digit", minute: "2-digit", hour12: false };
     const eventStart = eventInfo.event.start.toLocaleTimeString([], options);
     const eventEnd = eventInfo.event.end.toLocaleTimeString([], options);
+    const lecturerId = eventInfo.event.lecturerId;
+    const roomId = eventInfo.event.roomId;
+  
+    // Find lecturer by ID
+    const lecturer = lecturers.find((lecturer) => lecturer.id === lecturerId);
+  
+    // Find room by ID
+    const room = rooms.find((room) => room.id === roomId);
   
     return (
-      <div>
-        <i
+      <div className="p-1">
+        <div
           style={{
-            whitespace: "nowrap",
+            whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
             color: "#333",
-            maxWidth: "10px",
+            maxWidth: "100px",
           }}
         >
           <strong>{eventInfo.event.title}</strong>
           <p>{eventInfo.event.extendedProps.lecturer}</p>
           <p style={{ fontSize: "10px" }}>{eventInfo.event.extendedProps.room} | {eventStart} - {eventEnd}</p>
-        </i>
+        </div>
       </div>
     );
   }
@@ -351,13 +359,6 @@ function handleDelete() {
     <div className="page-content">
       <div className="container-fluid">
         <h5>Manajemen Jadwal</h5>
-        <Button
-              style={{ float: "right" }}
-              color="secondary"
-              onClick={() => setModal(true)}
-            >
-              Add schedule
-            </Button>
         <div className="info-container">
         <p>  klik pada kolom untuk menambahkan jadwal baru, geser kotak jadwal untuk memindahkan waktu.</p>
       </div>

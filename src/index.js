@@ -20,8 +20,8 @@ root.render(
   <React.StrictMode>
   <BrowserRouter>
     <Routes>
-      <Route path="/" element ={<Jadwal />} />
-      <Route path="/MainPage" element ={<MainPage />} />
+      <Route path="/Jadwal" element ={<Jadwal />} />
+      <Route path="/" element ={<MainPage />} />
       <Route path="/AdminLogin" element ={<AdminLogin />} />
       <Route path="/Dosen" element ={<MasterDataDosenPage />} />
       <Route path="/Ruangan" element ={<MasterDataRuanganPage />} />

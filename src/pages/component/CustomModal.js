@@ -31,17 +31,17 @@ export default function CustomModal({
       <ModalBody>{children}</ModalBody>
       <ModalFooter>
         {onDelete && (
-          <Button color="primary" onClick={handleDelete}>
+          <Button color="primary" className="custom-button" onClick={handleDelete}>
             {deleteText || "Delete"}
           </Button>
         )}
         {onSubmit && (
-          <Button color="secondary" onClick={handleEdit}>
+          <Button color="light" className="cancel-button" onClick={handleEdit}>
             {submitText || "Edit"}
           </Button>
         )}
         {onCancel && (
-          <Button color="secondary" onClick={onCancel}>
+          <Button color="light" className="cancel-button" onClick={onCancel}>
             {cancelText || "Cancel"}
           </Button>
         )}
