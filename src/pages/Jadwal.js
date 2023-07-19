@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FormGroup, Label, Input } from "reactstrap";
+import { FormGroup, Label, Input, Form } from "reactstrap";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { nanoid } from "nanoid";
+import { FcInfo } from 'react-icons/fc';
 import { Container, Row, Col, Button } from "reactstrap";
-import Select from "react-select";
-import DateRangePicker from "react-bootstrap-daterangepicker";
 import "./custom.css";
 import axios from "axios";
 
@@ -37,7 +35,9 @@ export default function Jadwal() {
   const [studyPrograms, setStudyPrograms] = useState([]);
   const [classTypes, setClassTypes] = useState([]);
   const [clickedEvent, setClickedEvent] = useState(null);
-
+  const [filterClass, setFilterClass] = useState("");
+  const [filterLecturer, setFilterLecturer] = useState("");
+  const [filterRoom, setFilterRoom] = useState("");
 
   const isFullscreen = window.innerWidth > 768; // Menggunakan breakpoint 768px sebagai pemisah layar penuh dan layar kecil
 
@@ -118,9 +118,10 @@ const handleCloseModal = () => {
   
     // Find room by ID
     const room = rooms.find((room) => room.id === roomId);
+    const eventClassName = isHoliday ? "is-holiday" : "";
   
     return (
-      <div className="p-1">
+      <div className={`p-1 ${eventClassName}`}>
         <div
           style={{
             whiteSpace: "nowrap",
@@ -256,6 +257,14 @@ const handleCloseModal = () => {
       .then((response) => {
         const updatedSchedule = response.data;
         console.log("Updated schedule:", updatedSchedule);
+  
+        // Perbarui acara di kalender dengan data yang diperbarui
+        event.setExtendedProp("lecturer", updatedSchedule.Lecturer ? updatedSchedule.Lecturer.name : "");
+        event.setExtendedProp("room", updatedSchedule.Room ? updatedSchedule.Room.name : "");
+        event.setExtendedProp("semester", updatedSchedule.Semester ? updatedSchedule.Semester.name : "");
+        event.setExtendedProp("classType", updatedSchedule.ClassType ? updatedSchedule.ClassType.name : "");
+        event.setExtendedProp("studyProgram", updatedSchedule.StudyProgram ? updatedSchedule.StudyProgram.name : "");
+  
         handleClose();
       })
       .catch((error) => {
@@ -265,6 +274,7 @@ const handleCloseModal = () => {
         event.setProp("title", state.clickInfo.oldTitle);
       });
   }
+  
   
   function handleSubmit() {
     axios
@@ -360,8 +370,60 @@ function handleDelete() {
       <div className="container-fluid">
         <h5>Manajemen Jadwal</h5>
         <div className="info-container">
-        <p>  klik pada kolom untuk menambahkan jadwal baru, geser kotak jadwal untuk memindahkan waktu.</p>
+        <p> <FcInfo/> klik pada kolom untuk menambahkan jadwal baru, geser kotak jadwal untuk memindahkan waktu.</p>
       </div>
+      <div className="row justify-content-center mt-4 px-5">
+  <FormGroup className="col">
+    <Input
+      type="select"
+      name="filterClass"
+      id="filterClass"
+      value={filterClass}
+      style={{ width: '350px', margin: '0 auto' }}
+    >
+      <option value="">Semua Kelas</option>
+      {classTypes.map((classType) => (
+        <option key={classType.id} value={classType.id}>
+          {classType.name}
+        </option>
+      ))}
+    </Input>
+  </FormGroup>
+
+  <FormGroup className="col">
+    <Input
+      type="select"
+      name="filterLecturer"
+      id="filterLecturer"
+      value={filterLecturer}
+      style={{ width: '350px', margin: '0 auto' }}
+    >
+      <option value="">Semua Dosen</option>
+      {lecturers.map((lecturer) => (
+        <option key={lecturer.id} value={lecturer.id}>
+          {lecturer.name}
+        </option>
+      ))}
+    </Input>
+  </FormGroup>
+
+  <FormGroup className="col">
+    <Input
+      type="select"
+      name="filterRoom"
+      id="filterRoom"
+      value={filterRoom}
+      style={{ width: '350px', margin: '0 auto' }}
+    >
+      <option value="">Semua Ruangan</option>
+      {rooms.map((room) => (
+        <option key={room.id} value={room.id}>
+          {room.name}
+        </option>
+      ))}
+    </Input>
+  </FormGroup>
+</div>
       <div>
       <Container>
         <FullCalendar
@@ -415,32 +477,37 @@ function handleDelete() {
         onDelete={state.clickInfo && handleDelete}
         deleteText="Delete"
       >
+          <Col>
+            <p>{start.toLocaleString(undefined, { weekday: 'long', hour: 'numeric', minute: 'numeric' })} - {end.toLocaleString(undefined, { hour: 'numeric', minute: 'numeric' })}</p>
+          </Col>
         <FormGroup row>
           <Label for="exampleEmail" sm={3}>
-            Title
+            Judul
           </Label>
           <Col sm={9}>
             <Input
               type="text"
               name="title"
-              placeholder="Enter title"
+              placeholder="Masukkan Judul"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </Col>
         </FormGroup>
+
         <FormGroup row>
           <Label for="lecturer" sm={3}>
-            Lecturer
+            Dosen
           </Label>
           <Col sm={9}>
             <Input
               type="select"
               name="lecturer"
               value={lecturer}
+              // {console.log(lecturer)}
               onChange={(e) => setLecturer(e.target.value)}
             >
-              <option value="">Choose Lecturer</option>
+              <option value="">Pilih Dosen</option>
               {lecturers.map((lecturer) => (
                 <option key={lecturer.id} value={lecturer.id}>
                   {lecturer.name}
@@ -451,7 +518,7 @@ function handleDelete() {
         </FormGroup>
         <FormGroup row>
           <Label for="room" sm={3}>
-            Room
+            Ruangan
           </Label>
           <Col sm={9}>
             <Input
@@ -460,7 +527,7 @@ function handleDelete() {
               value={room}
               onChange={(e) => setRoom(e.target.value)}
             >
-              <option value="">Choose Room</option>
+              <option value="">Pilih Ruangan</option>
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.name}
@@ -480,7 +547,7 @@ function handleDelete() {
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
             >
-              <option value="">Choose Semester</option>
+              <option value="">Pilih Semester</option>
               {semesters.map((semester) => (
                 <option key={semester.id} value={semester.id}>
                   {semester.name}
@@ -491,7 +558,7 @@ function handleDelete() {
         </FormGroup>
         <FormGroup row>
           <Label for="studyProgram" sm={3}>
-            Study Program
+            Prodi
           </Label>
           <Col sm={9}>
             <Input
@@ -500,7 +567,7 @@ function handleDelete() {
               value={studyProgram}
               onChange={(e) => setStudyProgram(e.target.value)}
             >
-              <option value="">Choose Study Program</option>
+              <option value="">Pilih Prodi</option>
               {studyPrograms.map((studyProgram) => (
                 <option key={studyProgram.id} value={studyProgram.id}>
                   {studyProgram.name}
@@ -511,7 +578,7 @@ function handleDelete() {
         </FormGroup>
         <FormGroup row>
           <Label for="classtype" sm={3}>
-            Class Type
+            Tipe Kelas
           </Label>
           <Col sm={9}>
             <Input
@@ -520,7 +587,7 @@ function handleDelete() {
               value={classtype}
               onChange={(e) => setClasstype(e.target.value)}
             >
-              <option value="">Choose Class Type</option>
+              <option value="">Pilih Tipe Kelas</option>
               {classTypes.map((classType) => (
                 <option key={classType.id} value={classType.id}>
                   {classType.name}
@@ -529,11 +596,11 @@ function handleDelete() {
             </Input>
           </Col>
         </FormGroup>
-        {/* <FormGroup row>
+        <FormGroup row>
         <Label for="isHoliday" sm={3}>
-          Is Holiday
+          Libur
         </Label>
-        <Col sm={9}>
+        <Col sm={9} className="p-2">
           <Input
             type="checkbox"
             name="isHoliday"
@@ -541,7 +608,7 @@ function handleDelete() {
             onChange={(e) => setIsHoliday(e.target.checked)}
           />
         </Col>
-      </FormGroup> */}
+      </FormGroup>
         </CustomModal>
 
       <CustomModal

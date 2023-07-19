@@ -122,6 +122,13 @@ margin-top: 1rem;
   float: right;
 }
 
+.delete-button {
+  background-color: #e95252;
+  border-radius: 15px;
+  font-size: 15px;
+  float: right;
+}
+
 .cancel-button {
   background-color: #D3D4D5;
   border-radius: 15px;

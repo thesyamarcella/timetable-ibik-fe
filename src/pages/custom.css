@@ -27,6 +27,7 @@
   }
   
   .fc-event.is-holiday {
+      color: black !important;
     background-color: #FFE9ED !important;
     border-color: #E95252 !important;
   }

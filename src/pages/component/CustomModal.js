@@ -31,12 +31,12 @@ export default function CustomModal({
       <ModalBody>{children}</ModalBody>
       <ModalFooter>
         {onDelete && (
-          <Button color="primary" className="custom-button" onClick={handleDelete}>
+          <Button color="danger" className="delete-button" onClick={handleDelete}>
             {deleteText || "Delete"}
           </Button>
         )}
         {onSubmit && (
-          <Button color="light" className="cancel-button" onClick={handleEdit}>
+          <Button color="primary" className="custom-button" onClick={handleEdit}>
             {submitText || "Edit"}
           </Button>
         )}

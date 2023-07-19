@@ -22,7 +22,7 @@ root.render(
     <Routes>
       <Route path="/Jadwal" element ={<Jadwal />} />
       <Route path="/" element ={<MainPage />} />
-      <Route path="/AdminLogin" element ={<AdminLogin />} />
+      <Route path="/adminpanel" element ={<AdminLogin />} />
       <Route path="/Dosen" element ={<MasterDataDosenPage />} />
       <Route path="/Ruangan" element ={<MasterDataRuanganPage />} />
       <Route path="/Prodi" element ={<MasterDataProdiPage />} />

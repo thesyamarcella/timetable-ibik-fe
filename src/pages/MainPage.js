@@ -6,6 +6,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { Typeahead } from 'react-bootstrap-typeahead';
 import { FormGroup, Label, Input } from 'reactstrap';
+import { Link } from "react-router-dom";
+import { FcInfo } from 'react-icons/fc';
 
 
 export default function Jadwal() {
@@ -17,6 +19,7 @@ export default function Jadwal() {
   const [filterClass, setFilterClass] = useState("");
   const [filterLecturer, setFilterLecturer] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
+  
 
   useEffect(() => {
     axios
@@ -86,7 +89,7 @@ export default function Jadwal() {
   const dayHeaderContent = (args) => {
     const weekdayFormat = isFullscreen ? "long" : "short";
     return (
-      <div style={{ textDecoration: "none", color: "black", pointerEvents: "none" }}>
+      <div style={{ ttextDecoration: "none", color: "black", pointerEvents: "none" }}>
         {args.date.toLocaleString("default", { weekday: weekdayFormat })}
       </div>
     );
@@ -100,25 +103,21 @@ export default function Jadwal() {
     const selectedLecturer = lecturers.find((lecturer) => lecturer.id === eventInfo.event.extendedProps.lecturer);
     const selectedRoom = rooms.find((room) => room.id === eventInfo.event.extendedProps.room);
   
+    const isHoliday = eventInfo.event.extendedProps.isHoliday;
+    
+    const eventClassName = isHoliday ? "is-holiday" : "";
+  
     return (
-      <div className="p-1">
-        <i
-          style={{
-            whitespace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            color: "#333",
-            maxWidth: "10px",
-          }}
-        >
+      <div className={`p-1 ${eventClassName}`}>
+        <i style={{ color: "black" }}>
           <strong>{eventInfo.event.title}</strong>
-          <p>{selectedLecturer ? selectedLecturer.name : ""}</p>
-          <p></p>
+          <p style={{ fontSize: "0.8rem" }}>{selectedLecturer ? selectedLecturer.name : ""}</p>
           <p style={{ fontSize: "0.8rem" }}>{selectedRoom ? selectedRoom.name : ""} | {eventStart} - {eventEnd}</p>
         </i>
       </div>
     );
   }
+  
   
 
   
@@ -137,8 +136,14 @@ export default function Jadwal() {
 
   return (
     <div className="px-5">
+
+    <div className="d-flex justify-content-between align-items-center">
       <h4 className="my-3">IBIKtimetable</h4>
-      <div className="row">
+    </div>
+      <div className="info-container mb-3">
+        <p> <FcInfo/> Silahkan filter jadwal sesuai yang dibutuhkan, Card berwarna <b>merah</b> menandakan bahwa kelas libur, dan <b>biru</b> bahwa kelas masuk </p>
+      </div>
+      <div className="row justify-content-center">
   <FormGroup className="col">
     <Input
       type="select"
@@ -146,7 +151,7 @@ export default function Jadwal() {
       id="filterClass"
       value={filterClass}
       onChange={handleFilterClass}
-      style={{ width: '200px', margin: '0 auto' }}
+      style={{ width: '350px', margin: '0 auto' }}
     >
       <option value="">Semua Kelas</option>
       {classTypes.map((classType) => (
@@ -164,7 +169,7 @@ export default function Jadwal() {
       id="filterLecturer"
       value={filterLecturer}
       onChange={handleFilterLecturer}
-      style={{ width: '200px', margin: '0 auto' }}
+      style={{ width: '350px', margin: '0 auto' }}
     >
       <option value="">Semua Dosen</option>
       {lecturers.map((lecturer) => (
@@ -182,7 +187,7 @@ export default function Jadwal() {
       id="filterRoom"
       value={filterRoom}
       onChange={handleFilterRoom}
-      style={{ width: '200px', margin: '0 auto' }}
+      style={{ width: '350px', margin: '0 auto' }}
     >
       <option value="">Semua Ruangan</option>
       {rooms.map((room) => (
@@ -205,6 +210,11 @@ export default function Jadwal() {
         weekends={weekendsVisible}
         dayHeaderContent={dayHeaderContent}
         eventContent={renderEventContent}
+        eventClassNames={(arg) => {
+        const isHoliday = arg.event.extendedProps.isHoliday;
+        const eventClassName = isHoliday ? "is-holiday" : "";
+        return [eventClassName];
+      }}
         initialDate="2023-10-01"
         validRange={{
           start: "2023-10-01",
